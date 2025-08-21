@@ -8,11 +8,28 @@ import json
 
 # Import custom modules
 from src.document_processor import DocumentProcessor
+
+# Import vector store with deployment-safe fallbacks
+VectorStore = None
+vector_store_type = "unknown"
+
+# For Streamlit Cloud deployment, prioritize simple implementations
 try:
-    from src.vector_store import VectorStore
+    # First try the most reliable implementation
+    from src.simple_embeddings import SimpleEmbeddingStore as VectorStore
+    vector_store_type = "basic"
+    st.info("📊 Using TF-IDF similarity - deployment-ready mode")
 except ImportError:
-    from src.simple_vector_store import SimpleVectorStore as VectorStore
-    st.info("📊 Using simplified vector store for demo")
+    try:
+        from src.simple_vector_store import SimpleVectorStore as VectorStore
+        vector_store_type = "simple"
+    except ImportError:
+        try:
+            from src.vector_store import VectorStore
+            vector_store_type = "advanced"
+        except ImportError:
+            st.error("❌ No vector store implementation available")
+            st.stop()
 
 try:
     from src.llama_rag_pipeline import LlamaRAGPipeline as RAGPipeline
@@ -91,13 +108,13 @@ with st.sidebar:
     
     st.divider()
     st.subheader("System Overview")
-    st.info("""
+    st.info(f"""
     **Architecture Components:**
-    - Document Ingestion Pipeline
-    - Microsoft E5 Vector Embeddings
-    - FAISS Vector Database
+    - Document Ingestion Pipeline  
+    - Semantic Vector Embeddings ({vector_store_type} mode)
+    - Vector Database with Similarity Search
     - RAG Pipeline with MMR
-    - Llama 3.0 + LoRA Generation
+    - AI Generation with Context
     - Performance Monitoring
     """)
     

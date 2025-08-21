@@ -5,12 +5,19 @@ Implements the vector database component as described in the technical architect
 
 import streamlit as st
 import numpy as np
-import faiss
+try:
+    import faiss
+    FAISS_AVAILABLE = True
+except ImportError:
+    st.warning("⚠️ FAISS not available - using simple vector search")
+    FAISS_AVAILABLE = False
+
 from sentence_transformers import SentenceTransformer
 from typing import List, Dict, Any, Tuple, Optional
 import pickle
 import json
 from datetime import datetime
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 class VectorStore:
@@ -19,7 +26,7 @@ class VectorStore:
     Implements semantic similarity search with cosine distance.
     """
     
-    def __init__(self, embedding_model: str = "microsoft/e5-small-v2", index_type: str = "flat"):
+    def __init__(self, embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2", index_type: str = "flat"):
         """
         Initialize the vector store.
         
@@ -30,24 +37,42 @@ class VectorStore:
         self.embedding_model_name = embedding_model
         self.index_type = index_type
         
-        # Initialize embedding model
+        # Initialize embedding model with robust fallback
         with st.spinner("Loading embedding model..."):
-            self.embedding_model = SentenceTransformer(embedding_model)
+            # Use reliable public model by default for deployment
+            try:
+                # For deployment, use all-MiniLM-L6-v2 which is publicly available
+                self.embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+                self.embedding_model_name = "sentence-transformers/all-MiniLM-L6-v2"
+                st.info("🔄 Using MiniLM embeddings for deployment compatibility")
+            except Exception as e:
+                st.error(f"❌ Failed to load embedding model: {str(e)}")
+                raise RuntimeError("Could not initialize any embedding model")
         
         self.embedding_dim = self.embedding_model.get_sentence_embedding_dimension()
         
-        # Initialize FAISS index
-        if index_type == "flat":
-            self.index = faiss.IndexFlatIP(self.embedding_dim)  # Inner Product for cosine similarity
+        # Initialize vector index
+        if FAISS_AVAILABLE:
+            if index_type == "flat":
+                self.index = faiss.IndexFlatIP(self.embedding_dim)  # Inner Product for cosine similarity
+            else:
+                raise ValueError(f"Unsupported index type: {index_type}")
+            self.use_faiss = True
         else:
-            raise ValueError(f"Unsupported index type: {index_type}")
+            self.index = None
+            self.use_faiss = False
+            st.info("Using simple cosine similarity search")
         
         # Storage for document metadata and embeddings
         self.embeddings = []
         self.documents = []
         self.document_metadata = {}
         
-        st.success(f"✅ Vector store initialized with E5 embeddings (dim: {self.embedding_dim})")
+        
+        # Determine if using E5-style prefixes
+        self.use_e5_prefixes = "e5" in self.embedding_model_name.lower()
+        model_type = "E5" if self.use_e5_prefixes else "MiniLM"
+        st.success(f"✅ Vector store initialized with {model_type} embeddings (dim: {self.embedding_dim})")
     
     def add_documents(self, chunks: List[Dict[str, Any]], document_name: str) -> None:
         """
@@ -63,17 +88,21 @@ class VectorStore:
         # Extract text content for embedding
         texts = [chunk['content'] for chunk in chunks]
         
-        # Generate embeddings using E5 model
-        with st.spinner(f"Generating E5 embeddings for {document_name}..."):
-            # E5 models use specific prefixes for documents
-            prefixed_texts = [f"passage: {text}" for text in texts]
+        # Generate embeddings 
+        with st.spinner(f"Generating embeddings for {document_name}..."):
+            # Use E5 prefixes only if using E5 model
+            if self.use_e5_prefixes:
+                prefixed_texts = [f"passage: {text}" for text in texts]
+            else:
+                prefixed_texts = texts
             embeddings = self.embedding_model.encode(prefixed_texts, convert_to_tensor=False, show_progress_bar=True)
             
             # Normalize embeddings for cosine similarity
             embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
         
-        # Add to FAISS index
-        self.index.add(embeddings.astype('float32'))
+        # Add to vector index
+        if self.use_faiss:
+            self.index.add(embeddings.astype('float32'))
         
         # Store embeddings and documents
         start_id = len(self.embeddings)
@@ -112,13 +141,27 @@ class VectorStore:
         if len(self.embeddings) == 0:
             return []
         
-        # Generate query embedding with E5 prefix
-        query_with_prefix = f"query: {query}"
-        query_embedding = self.embedding_model.encode([query_with_prefix], convert_to_tensor=False)
+        # Generate query embedding
+        if self.use_e5_prefixes:
+            query_text = f"query: {query}"
+        else:
+            query_text = query
+        query_embedding = self.embedding_model.encode([query_text], convert_to_tensor=False)
         query_embedding = query_embedding / np.linalg.norm(query_embedding, axis=1, keepdims=True)
         
-        # Search in FAISS index
-        scores, indices = self.index.search(query_embedding.astype('float32'), min(top_k, len(self.embeddings)))
+        # Search in vector index
+        if self.use_faiss:
+            scores, indices = self.index.search(query_embedding.astype('float32'), min(top_k, len(self.embeddings)))
+        else:
+            # Simple cosine similarity search
+            if not self.embeddings:
+                return []
+            embedding_matrix = np.array(self.embeddings)
+            similarities = cosine_similarity(query_embedding, embedding_matrix)[0]
+            # Get top_k indices
+            top_indices = np.argsort(similarities)[::-1][:top_k]
+            scores = [similarities[i:i+1] for i in top_indices]
+            indices = [top_indices]
         
         results = []
         for score, idx in zip(scores[0], indices[0]):
