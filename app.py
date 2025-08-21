@@ -35,6 +35,8 @@ st.set_page_config(
 # Initialize session state
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
+if 'username' not in st.session_state:
+    st.session_state.username = None
 if 'vector_store' not in st.session_state:
     st.session_state.vector_store = None
 if 'rag_pipeline' not in st.session_state:
@@ -72,7 +74,11 @@ if not st.session_state.authenticated:
 
 # Main application
 st.title("🤖 Enterprise GenAI Copilot Demo")
-st.markdown(f"**Welcome, {st.session_state.username}** | Role-Based Access Control: ✅ Active")
+user_info = auth.get_user_info()
+if user_info:
+    st.markdown(f"**Welcome, {user_info.get('full_name', st.session_state.username)}** | Role: {user_info.get('role', 'N/A')} | RBAC: ✅ Active")
+else:
+    st.markdown("Role-Based Access Control: ✅ Active")
 
 # Sidebar navigation
 with st.sidebar:
