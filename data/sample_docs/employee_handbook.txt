@@ -1,0 +1,74 @@
+EMPLOYEE HANDBOOK - ENTERPRISE POLICIES
+
+1. REMOTE WORK POLICY
+
+Effective immediately, all employees are eligible for flexible remote work arrangements. 
+
+Remote Work Guidelines:
+- Employees may work remotely up to 3 days per week
+- Core collaboration hours are 10 AM to 3 PM local time
+- All remote workers must maintain reliable internet connectivity
+- Home office ergonomic assessments are available upon request
+- Quarterly in-person team meetings are mandatory
+
+Equipment and Security:
+- Company-issued laptops must be used for all work activities
+- VPN connection is required when accessing company resources
+- Personal devices may not be used for company data
+- All work materials must be stored in approved cloud storage
+
+Performance Management:
+- Remote work performance is evaluated on deliverable outcomes
+- Weekly one-on-one meetings with managers are required
+- Project milestone tracking through approved tools is mandatory
+
+2. INFORMATION SECURITY POLICY
+
+Data Classification:
+- Public: Information that can be shared freely
+- Internal: Information restricted to company employees
+- Confidential: Sensitive business information with limited access
+- Restricted: Highly sensitive information requiring special authorization
+
+Access Controls:
+- Multi-factor authentication is required for all systems
+- Password requirements: minimum 12 characters with complexity
+- Access reviews are conducted quarterly
+- User access is provisioned based on job role requirements
+
+Incident Reporting:
+- Security incidents must be reported within 1 hour of discovery
+- Contact the security team immediately at security@company.com
+- Incident response team will coordinate containment and remediation
+- Post-incident reviews are conducted for all major breaches
+
+3. PROFESSIONAL DEVELOPMENT
+
+Training Requirements:
+- Annual compliance training is mandatory for all employees
+- Role-specific technical training budgets are allocated per department
+- Conference attendance requires manager approval and business justification
+
+Career Development:
+- Annual performance reviews include development planning
+- Internal mobility is encouraged before external hiring
+- Mentorship programs are available for all career levels
+- Leadership development tracks are available for managers
+
+4. LEAVE AND TIME OFF
+
+Vacation Policy:
+- Unlimited vacation policy with manager approval
+- Minimum 2 weeks vacation recommended annually
+- Peak business periods may restrict vacation timing
+- Vacation must be recorded in the HR system
+
+Sick Leave:
+- Paid sick leave is provided per local regulations
+- Extended illness requires medical documentation
+- Return-to-work medical clearance may be required
+
+Family Leave:
+- Parental leave benefits exceed local legal minimums
+- Adoption leave is provided equivalent to parental leave
+- Family care leave is available for serious health conditions
